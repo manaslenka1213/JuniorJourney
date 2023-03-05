@@ -1,46 +1,61 @@
-import React from 'react';
-import { StyleSheet } from 'react-native';
-
+import React, { useEffect, useState } from 'react'
+import { StyleSheet ,ScrollView,Text,View,TextInput,Button } from 'react-native';
 import Colors from '../constants/Colors';
 import { ExternalLink } from './ExternalLink';
 import { MonoText } from './StyledText';
-import { Text, View } from './Themed';
+// import { Text, View } from './Themed';
+import { initializeApp } from "firebase/app";
+import { config }  from "./config";
+import { getAuth } from "firebase/auth";
+import { getDatabase, ref, child, get } from "firebase/database";
+import CardLayout from "./cardLayout"
+
+
 
 export default function EditScreenInfo({ path }: { path: string }) {
+const [datas,setData] = useState([])
+useEffect(() => {
+  const fetchData = async () => {
+    const firebase = initializeApp(config);
+    const dbRef = ref(getDatabase(firebase));
+    console.log("printing");
+
+    try {
+      const snapshot = await get(child(dbRef, `manager`));
+      if (snapshot.exists()) {
+        const entries = snapshot.val().managerID;
+        entries.map((item: any)=>console.log(item.name));
+        setData(entries);
+        console.log(entries);
+      } else {
+        console.log("No data available");
+      }
+    } catch (error) {
+      console.error(error);
+    }
+    console.log(dbRef);
+  }
+
+  fetchData();
+}, [])
   return (
     <View>
-      <View style={styles.getStartedContainer}>
-        <Text
-          style={styles.getStartedText}
-          lightColor="rgba(0,0,0,0.8)"
-          darkColor="rgba(255,255,255,0.8)">
-          Open up the code for this screen:
-        </Text>
-
-        <View
-          style={[styles.codeHighlightContainer, styles.homeScreenFilename]}
-          darkColor="rgba(255,255,255,0.05)"
-          lightColor="rgba(0,0,0,0.05)">
-          <MonoText>{path}</MonoText>
+     
+     <Button  title={`Total Managers are ${datas?datas.length-1:'Unknown'} ${datas?"":'click here to Show Managers '}`}  />
+      <ScrollView >
+      <View>
+      {datas && (
+        <View>
+          {datas.map((item:any,index) => (
+            <View>
+            <CardLayout key={index} descripton={item.desc} empName={item.name}></CardLayout>
+            </View>
+          ))}
         </View>
-
-        <Text
-          style={styles.getStartedText}
-          lightColor="rgba(0,0,0,0.8)"
-          darkColor="rgba(255,255,255,0.8)">
-          Change any of the text, save the file, and your app will automatically update.
-        </Text>
-      </View>
-
-      <View style={styles.helpContainer}>
-        <ExternalLink
-          style={styles.helpLink}
-          href="https://docs.expo.io/get-started/create-a-new-app/#opening-the-app-on-your-phonetablet">
-          <Text style={styles.helpLinkText} lightColor={Colors.light.tint}>
-            Tap here if your app doesn't automatically update after making changes
-          </Text>
-        </ExternalLink>
-      </View>
+      )}
+    </View>
+    </ScrollView>
+      
     </View>
   );
 }
